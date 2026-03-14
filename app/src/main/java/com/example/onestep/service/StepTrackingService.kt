@@ -16,6 +16,7 @@ import com.example.onestep.MainActivity
 import com.example.onestep.R
 import com.example.onestep.data.db.AppDatabase
 import com.example.onestep.data.model.TrackingSession
+import com.example.onestep.util.TimeUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -108,11 +109,8 @@ class StepTrackingService : LifecycleService(), SensorEventListener {
     private fun resumeTracking() {
         if (!_isTracking.value || !_isPaused.value) return
         _isPaused.value = false
-        initialSteps = -1 // Reset baseline so steps while paused aren't counted
+        initialSteps = -1
         registerSensors()
-        
-        // Adjust startTime to exclude pause duration (optional, but better for accuracy)
-        // For simplicity, we'll just resume the timer from where it was
         startTimer()
     }
 
@@ -145,7 +143,6 @@ class StepTrackingService : LifecycleService(), SensorEventListener {
             )
             AppDatabase.getDatabase(applicationContext).sessionDao().insertSession(session)
             
-            // Reset live data for UI
             _currentSteps.value = 0
             _activeTime.value = 0L
             
@@ -170,7 +167,7 @@ class StepTrackingService : LifecycleService(), SensorEventListener {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Step Tracking",
+                getString(R.string.notif_title),
                 NotificationManager.IMPORTANCE_LOW
             )
             val manager = getSystemService(NotificationManager::class.java)
@@ -178,12 +175,9 @@ class StepTrackingService : LifecycleService(), SensorEventListener {
         }
     }
 
-    private fun createNotification(steps: Int, timeMillis: Int): Notification {
-        // Simple time formatting
-        val seconds = (timeMillis / 1000) % 60
-        val minutes = (timeMillis / (1000 * 60)) % 60
-        val hours = (timeMillis / (1000 * 60 * 60))
-        val timeString = String.format("%02d:%02d:%02d", hours, minutes, seconds)
+    private fun createNotification(steps: Int, timeMillis: Long): Notification {
+        val timeString = TimeUtils.formatDuration(timeMillis)
+        val contentText = getString(R.string.notif_content, steps, timeString)
 
         val intent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
@@ -191,17 +185,13 @@ class StepTrackingService : LifecycleService(), SensorEventListener {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Tracking Steps")
-            .setContentText("$steps steps | $timeString")
-            .setSmallIcon(com.example.onestep.R.drawable.ic_logo)
+            .setContentTitle(getString(R.string.notif_title))
+            .setContentText(contentText)
+            .setSmallIcon(R.drawable.ic_logo)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .build()
     }
-
-    // Overload for convenience
-    private fun createNotification(steps: Int, timeMillis: Long): Notification = 
-        createNotification(steps, timeMillis.toInt())
 
     private fun updateNotification(steps: Int, timeMillis: Long) {
         val notification = createNotification(steps, timeMillis)

@@ -17,11 +17,14 @@ import com.example.onestep.ui.viewmodel.TrackerViewModel
 
 class MainActivity : ComponentActivity() {
 
-    private val viewModel: TrackerViewModel by viewModels()
+    private val viewModel: TrackerViewModel by viewModels {
+        val app = application as OneStepApplication
+        TrackerViewModel.Factory(app, app.repository)
+    }
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
+    ) { _ ->
         // Handle results if needed
     }
 

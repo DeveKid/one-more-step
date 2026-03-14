@@ -1,5 +1,6 @@
 package com.example.onestep.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,22 +13,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.onestep.R
 import com.example.onestep.data.model.TrackingSession
-import com.example.onestep.ui.theme.Black
-import com.example.onestep.ui.theme.Cyan
-import com.example.onestep.ui.theme.NeonGreen
-import com.example.onestep.ui.theme.MutedRed
-import com.example.onestep.ui.theme.Gray
+import com.example.onestep.ui.theme.*
+import com.example.onestep.util.TimeUtils
 import java.text.SimpleDateFormat
 import java.util.*
-
-import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
-import com.example.onestep.R
 
 @Composable
 fun TrackerScreen(
@@ -70,13 +69,13 @@ fun TrackerScreen(
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_walking_man),
-                contentDescription = "App Logo",
+                contentDescription = null,
                 modifier = Modifier.size(32.dp),
-                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White)
+                colorFilter = ColorFilter.tint(Color.White)
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                text = "ONE MORE STEP",
+                text = stringResource(R.string.header_title),
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color.White,
                 fontWeight = FontWeight.Bold
@@ -85,7 +84,7 @@ fun TrackerScreen(
 
         if (!sensorExists) {
             Text(
-                text = "Hardware Step Counter not detected on this device.",
+                text = stringResource(R.string.error_no_sensor),
                 color = MutedRed,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(bottom = 24.dp)
@@ -99,14 +98,12 @@ fun TrackerScreen(
             contentAlignment = Alignment.Center,
             modifier = Modifier.size(280.dp)
         ) {
-            // Track (Background)
             CircularProgressIndicator(
                 progress = 1f,
                 modifier = Modifier.fillMaxSize(),
                 color = Color.DarkGray.copy(alpha = 0.3f),
                 strokeWidth = 14.dp
             )
-            // Progress
             CircularProgressIndicator(
                 progress = (currentSteps.toFloat() / dailyGoal).coerceIn(0f, 1f),
                 modifier = Modifier.fillMaxSize(),
@@ -116,7 +113,7 @@ fun TrackerScreen(
                     else -> NeonGreen
                 },
                 strokeWidth = 14.dp,
-                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                strokeCap = StrokeCap.Round
             )
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -129,14 +126,14 @@ fun TrackerScreen(
                     fontWeight = FontWeight.Black
                 )
                 Text(
-                    text = "Goal: $dailyGoal",
+                    text = stringResource(R.string.label_goal, dailyGoal),
                     style = MaterialTheme.typography.labelLarge,
                     color = Cyan,
                     modifier = Modifier.padding(4.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = formatTime(activeTime),
+                    text = TimeUtils.formatDuration(activeTime),
                     style = MaterialTheme.typography.titleMedium,
                     color = if (isTracking && !isPaused) Cyan else Gray
                 )
@@ -157,7 +154,7 @@ fun TrackerScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = NeonGreen),
                     shape = RoundedCornerShape(28.dp)
                 ) {
-                    Text("START", fontWeight = FontWeight.Bold, color = Black)
+                    Text(stringResource(R.string.btn_start), fontWeight = FontWeight.Bold, color = Black)
                 }
             } else {
                 Button(
@@ -168,7 +165,8 @@ fun TrackerScreen(
                     ),
                     shape = RoundedCornerShape(28.dp)
                 ) {
-                    Text(if (isPaused) "RESUME" else "PAUSE", fontWeight = FontWeight.Bold, color = Black)
+                    val label = if (isPaused) stringResource(R.string.btn_resume) else stringResource(R.string.btn_pause)
+                    Text(label, fontWeight = FontWeight.Bold, color = Black)
                 }
                 
                 Button(
@@ -177,16 +175,15 @@ fun TrackerScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = MutedRed),
                     shape = RoundedCornerShape(28.dp)
                 ) {
-                    Text("STOP", fontWeight = FontWeight.Bold, color = Black)
+                    Text(stringResource(R.string.btn_stop), fontWeight = FontWeight.Bold, color = Black)
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // History List
         Text(
-            text = "RECENT SESSIONS",
+            text = stringResource(R.string.label_recent_sessions),
             style = MaterialTheme.typography.labelLarge,
             color = Gray,
             modifier = Modifier.align(Alignment.Start).padding(bottom = 16.dp)
@@ -213,13 +210,13 @@ fun GoalEditDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Set Daily Goal") },
+        title = { Text(stringResource(R.string.dialog_goal_title)) },
         text = {
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                label = { Text("Steps") },
+                label = { Text(stringResource(R.string.dialog_goal_label)) },
                 singleLine = true
             )
         },
@@ -227,12 +224,12 @@ fun GoalEditDialog(
             TextButton(onClick = { 
                 text.toIntOrNull()?.let { onConfirm(it) }
             }) {
-                Text("SAVE")
+                Text(stringResource(R.string.dialog_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("CANCEL")
+                Text(stringResource(R.string.dialog_cancel))
             }
         }
     )
@@ -260,31 +257,24 @@ fun SessionCard(session: TrackingSession) {
                     color = Color.White
                 )
                 Text(
-                    text = formatTime(session.durationInMillis),
+                    text = TimeUtils.formatDuration(session.durationInMillis),
                     style = MaterialTheme.typography.bodySmall,
                     color = Gray
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "${session.totalSteps} steps",
+                    text = stringResource(R.string.label_steps_count, session.totalSteps),
                     style = MaterialTheme.typography.titleMedium,
                     color = NeonGreen,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Goal: ${session.goal}",
+                    text = stringResource(R.string.label_goal, session.goal),
                     style = MaterialTheme.typography.labelSmall,
                     color = Gray
                 )
             }
         }
     }
-}
-
-private fun formatTime(millis: Long): String {
-    val sec = (millis / 1000) % 60
-    val min = (millis / (1000 * 60)) % 60
-    val hr = (millis / (1000 * 60 * 60))
-    return String.format("%02d:%02d:%02d", hr, min, sec)
 }

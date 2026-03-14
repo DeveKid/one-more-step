@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name=".OneStepApplication"
         android:allowBackup="true"
         android:icon="@drawable/ic_logo"
         android:label="One More Step"

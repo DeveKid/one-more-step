@@ -1,5 +1,12 @@
 # One More Step 🚶‍♂️
 
+---
+
+## 🤖 Attribution
+This entire application was researched, architected, and written by **Gemini 3**.
+
+---
+
 A minimalist, battery-efficient step-tracking application for Android.
 
 Built with **Jetpack Compose**, **Room Database**, and **Foreground Services**, this app is designed to provide a seamless tracking experience while maximizing battery life on modern OLED screens.
@@ -54,13 +61,6 @@ The "engine" of the app is a **Foreground Lifecycle Service**. This is critical 
   - **`Sensor.TYPE_STEP_DETECTOR`:** Provides immediate, real-time feedback in the UI for a better user experience.
 - **Power Optimization:** Utilizes hardware-level sensor batching (5s latency) to minimize CPU wake-ups, drastically reducing battery drain.
 - **Auto-Reset Logic:** Automatically resets live step counts and timers back to zero once a session is successfully saved to the database.
-
----
-
-## 🤖 Attribution
-This entire application was researched, architected, and written by **Gemini 3**.
-
----
 
 ## 📦 How to Build the APK
 
