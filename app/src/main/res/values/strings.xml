@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">One More Step</string>
+    <string name="header_title">ONE MORE STEP</string>
+    <string name="label_goal">Goal: %1$d</string>
+    <string name="label_recent_sessions">RECENT SESSIONS</string>
+    <string name="label_steps_count">%1$d steps</string>
+    <string name="btn_start">START</string>
+    <string name="btn_stop">STOP</string>
+    <string name="btn_pause">PAUSE</string>
+    <string name="btn_resume">RESUME</string>
+    <string name="dialog_goal_title">Set Daily Goal</string>
+    <string name="dialog_goal_label">Steps</string>
+    <string name="dialog_save">SAVE</string>
+    <string name="dialog_cancel">CANCEL</string>
+    <string name="error_no_sensor">Hardware Step Counter not detected on this device.</string>
+    <string name="notif_title">Tracking Steps</string>
+    <string name="notif_content">%1$d steps | %2$s</string>
+</resources>
