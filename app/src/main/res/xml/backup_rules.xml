@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Include the Room Database files -->
+    <include domain="database" path="one_step_database"/>
+    <include domain="database" path="one_step_database-shm"/>
+    <include domain="database" path="one_step_database-wal"/>
+    
+    <!-- Include Shared Preferences (where the Daily Goal is stored) -->
+    <include domain="sharedpref" path="."/>
+</full-backup-content>

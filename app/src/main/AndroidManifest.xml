@@ -9,6 +9,8 @@
     <application
         android:name=".OneStepApplication"
         android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@drawable/ic_logo"
         android:label="One More Step"
         android:roundIcon="@drawable/ic_logo"
