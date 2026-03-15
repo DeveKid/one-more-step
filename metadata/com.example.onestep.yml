@@ -1,0 +1,36 @@
+Categories:
+  - Health & Fitness
+License: MIT
+AuthorName: DeveKid
+SourceCode: https://github.com/DeveKid/one-more-step
+IssueTracker: https://github.com/DeveKid/one-more-step/issues
+
+AutoName: One More Step
+Description: |-
+    One More Step is a minimalist, battery-efficient step-tracking application built with modern Android standards.
+
+    The app is optimized for OLED screens, using a "True Black" theme (#000000) to draw zero power on black pixels. It leverages hardware-level sensors (Sensor.TYPE_STEP_COUNTER and Sensor.TYPE_STEP_DETECTOR) with batching to minimize CPU wake-ups, drastically reducing battery drain.
+
+    Features:
+    - True Black Dark Mode: Optimized for OLED pixels.
+    - Hardware-Level Tracking: Reliable and efficient step counting.
+    - Pause/Resume: Full control over your tracking sessions.
+    - Dynamic Goals: Set custom daily targets.
+    - Session History: Automatically saves your walks to a local Room database.
+    - Monochrome Branding: High-contrast, sleek aesthetic.
+
+RepoType: git
+Repo: https://github.com/DeveKid/one-more-step
+
+Builds:
+  - versionName: '1.0'
+    versionCode: 1
+    commit: v1.0
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version v%v
+UpdateCheckMode: Tags
+CurrentVersion: '1.0'
+CurrentVersionCode: 1
