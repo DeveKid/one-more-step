@@ -55,7 +55,8 @@ class MainActivity : ComponentActivity() {
                     onStop = { viewModel.stopTracking() },
                     onPause = { viewModel.pauseTracking() },
                     onResume = { viewModel.resumeTracking() },
-                    onUpdateGoal = { viewModel.updateDailyGoal(it) }
+                    onUpdateGoal = { viewModel.updateDailyGoal(it) },
+                    onDeleteSession = { viewModel.deleteSession(it) }
                 )
             }
         }

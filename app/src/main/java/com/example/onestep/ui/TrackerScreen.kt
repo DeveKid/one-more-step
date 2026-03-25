@@ -29,6 +29,10 @@ import com.example.onestep.util.TimeUtils
 import java.text.SimpleDateFormat
 import java.util.*
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TrackerScreen(
     currentSteps: Int,
@@ -42,9 +46,11 @@ fun TrackerScreen(
     onStop: () -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
-    onUpdateGoal: (Int) -> Unit
+    onUpdateGoal: (Int) -> Unit,
+    onDeleteSession: (TrackingSession) -> Unit
 ) {
     var showGoalDialog by remember { mutableStateOf(false) }
+    var sessionToDelete by remember { mutableStateOf<TrackingSession?>(null) }
 
     if (showGoalDialog) {
         GoalEditDialog(
@@ -53,6 +59,27 @@ fun TrackerScreen(
             onConfirm = { 
                 onUpdateGoal(it)
                 showGoalDialog = false
+            }
+        )
+    }
+
+    if (sessionToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { sessionToDelete = null },
+            title = { Text("Delete Session") },
+            text = { Text("Are you sure you want to delete this session?") },
+            confirmButton = {
+                TextButton(onClick = { 
+                    sessionToDelete?.let { onDeleteSession(it) }
+                    sessionToDelete = null
+                }) {
+                    Text("DELETE", color = MutedRed)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { sessionToDelete = null }) {
+                    Text("CANCEL")
+                }
             }
         )
     }
@@ -106,7 +133,10 @@ fun TrackerScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        HistorySection(sessions = sessions)
+        HistorySection(
+            sessions = sessions,
+            onLongPress = { sessionToDelete = it }
+        )
     }
 }
 
@@ -263,7 +293,10 @@ private fun ControlButtonsRow(
 }
 
 @Composable
-private fun ColumnScope.HistorySection(sessions: List<TrackingSession>) {
+private fun ColumnScope.HistorySection(
+    sessions: List<TrackingSession>,
+    onLongPress: (TrackingSession) -> Unit
+) {
     Text(
         text = stringResource(R.string.label_recent_sessions),
         style = MaterialTheme.typography.labelLarge,
@@ -276,7 +309,10 @@ private fun ColumnScope.HistorySection(sessions: List<TrackingSession>) {
         modifier = Modifier.weight(1f).fillMaxWidth()
     ) {
         items(sessions) { session ->
-            SessionCard(session)
+            SessionCard(
+                session = session,
+                onLongPress = { onLongPress(session) }
+            )
         }
     }
 }
@@ -316,10 +352,19 @@ fun GoalEditDialog(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SessionCard(session: TrackingSession) {
+fun SessionCard(
+    session: TrackingSession,
+    onLongPress: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = {},
+                onLongClick = onLongPress
+            ),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A)),
         shape = RoundedCornerShape(12.dp)
     ) {
