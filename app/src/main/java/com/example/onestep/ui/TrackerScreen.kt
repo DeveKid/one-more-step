@@ -24,10 +24,15 @@ import androidx.compose.ui.unit.sp
 import com.example.onestep.R
 import com.example.onestep.data.model.TrackingSession
 import com.example.onestep.ui.theme.*
+import com.example.onestep.util.StepUtils
 import com.example.onestep.util.TimeUtils
 import java.text.SimpleDateFormat
 import java.util.*
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TrackerScreen(
     currentSteps: Int,
@@ -41,9 +46,11 @@ fun TrackerScreen(
     onStop: () -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
-    onUpdateGoal: (Int) -> Unit
+    onUpdateGoal: (Int) -> Unit,
+    onDeleteSession: (TrackingSession) -> Unit
 ) {
     var showGoalDialog by remember { mutableStateOf(false) }
+    var sessionToDelete by remember { mutableStateOf<TrackingSession?>(null) }
 
     if (showGoalDialog) {
         GoalEditDialog(
@@ -56,6 +63,30 @@ fun TrackerScreen(
         )
     }
 
+    if (sessionToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { sessionToDelete = null },
+            title = { Text("Delete Session", color = Color.White) },
+            text = { Text("Are you sure you want to delete this session?", color = Gray) },
+            containerColor = DarkGray,
+            titleContentColor = Color.White,
+            textContentColor = Gray,
+            confirmButton = {
+                TextButton(onClick = { 
+                    sessionToDelete?.let { onDeleteSession(it) }
+                    sessionToDelete = null
+                }) {
+                    Text("DELETE", color = MutedRed, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { sessionToDelete = null }) {
+                    Text("CANCEL", color = Cyan)
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -63,24 +94,7 @@ fun TrackerScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 16.dp)
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_walking_man),
-                contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                colorFilter = ColorFilter.tint(Color.White)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = stringResource(R.string.header_title),
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        HeaderSection()
 
         if (!sensorExists) {
             Text(
@@ -94,108 +108,214 @@ fun TrackerScreen(
         }
 
         // Hero Section: Step Count Circular Indicator
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.size(280.dp)
-        ) {
-            CircularProgressIndicator(
-                progress = 1f,
-                modifier = Modifier.fillMaxSize(),
-                color = Color.DarkGray.copy(alpha = 0.3f),
-                strokeWidth = 14.dp
-            )
-            CircularProgressIndicator(
-                progress = (currentSteps.toFloat() / dailyGoal).coerceIn(0f, 1f),
-                modifier = Modifier.fillMaxSize(),
-                color = when {
-                    !isTracking -> Gray
-                    isPaused -> Cyan.copy(alpha = 0.5f)
-                    else -> NeonGreen
-                },
-                strokeWidth = 14.dp,
-                strokeCap = StrokeCap.Round
-            )
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable { showGoalDialog = true }
-            ) {
-                Text(
-                    text = currentSteps.toString(),
-                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 64.sp),
-                    color = Color.White,
-                    fontWeight = FontWeight.Black
-                )
-                Text(
-                    text = stringResource(R.string.label_goal, dailyGoal),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Cyan,
-                    modifier = Modifier.padding(4.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = TimeUtils.formatDuration(activeTime),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (isTracking && !isPaused) Cyan else Gray
-                )
-            }
-        }
+        StepCounterSection(
+            currentSteps = currentSteps,
+            dailyGoal = dailyGoal,
+            activeTime = activeTime,
+            isTracking = isTracking,
+            isPaused = isPaused,
+            onClickGoal = { showGoalDialog = true }
+        )
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Control Buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            if (!isTracking) {
-                Button(
-                    onClick = onStart,
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = NeonGreen),
-                    shape = RoundedCornerShape(28.dp)
-                ) {
-                    Text(stringResource(R.string.btn_start), fontWeight = FontWeight.Bold, color = Black)
-                }
-            } else {
-                Button(
-                    onClick = { if (isPaused) onResume() else onPause() },
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isPaused) Cyan else Gray
-                    ),
-                    shape = RoundedCornerShape(28.dp)
-                ) {
-                    val label = if (isPaused) stringResource(R.string.btn_resume) else stringResource(R.string.btn_pause)
-                    Text(label, fontWeight = FontWeight.Bold, color = Black)
-                }
-                
-                Button(
-                    onClick = onStop,
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MutedRed),
-                    shape = RoundedCornerShape(28.dp)
-                ) {
-                    Text(stringResource(R.string.btn_stop), fontWeight = FontWeight.Bold, color = Black)
-                }
-            }
-        }
+        // Live Metrics Row (Distance & Calories)
+        MetricsSummaryRow(currentSteps = currentSteps)
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Text(
-            text = stringResource(R.string.label_recent_sessions),
-            style = MaterialTheme.typography.labelLarge,
-            color = Gray,
-            modifier = Modifier.align(Alignment.Start).padding(bottom = 16.dp)
+        // Control Buttons
+        ControlButtonsRow(
+            isTracking = isTracking,
+            isPaused = isPaused,
+            onStart = onStart,
+            onStop = onStop,
+            onPause = onPause,
+            onResume = onResume
         )
 
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.weight(1f).fillMaxWidth()
+        Spacer(modifier = Modifier.height(32.dp))
+
+        HistorySection(
+            sessions = sessions,
+            onLongPress = { sessionToDelete = it }
+        )
+    }
+}
+
+@Composable
+private fun HeaderSection() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.ic_walking_man),
+            contentDescription = null,
+            modifier = Modifier.size(32.dp),
+            colorFilter = ColorFilter.tint(Color.White)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = stringResource(R.string.header_title),
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.White,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun StepCounterSection(
+    currentSteps: Int,
+    dailyGoal: Int,
+    activeTime: Long,
+    isTracking: Boolean,
+    isPaused: Boolean,
+    onClickGoal: () -> Unit
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(280.dp)
+    ) {
+        // Track (Background)
+        CircularProgressIndicator(
+            progress = 1f,
+            modifier = Modifier.fillMaxSize(),
+            color = Color.DarkGray.copy(alpha = 0.3f),
+            strokeWidth = 14.dp
+        )
+        // Progress
+        CircularProgressIndicator(
+            progress = (currentSteps.toFloat() / dailyGoal).coerceIn(0f, 1f),
+            modifier = Modifier.fillMaxSize(),
+            color = when {
+                !isTracking -> Gray
+                isPaused -> Cyan.copy(alpha = 0.5f)
+                else -> NeonGreen
+            },
+            strokeWidth = 14.dp,
+            strokeCap = StrokeCap.Round
+        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.clickable { onClickGoal() }
         ) {
-            items(sessions) { session ->
-                SessionCard(session)
+            Text(
+                text = currentSteps.toString(),
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 64.sp),
+                color = Color.White,
+                fontWeight = FontWeight.Black
+            )
+            Text(
+                text = stringResource(R.string.label_goal, dailyGoal),
+                style = MaterialTheme.typography.labelLarge,
+                color = Cyan,
+                modifier = Modifier.padding(4.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = TimeUtils.formatDuration(activeTime),
+                style = MaterialTheme.typography.titleMedium,
+                color = if (isTracking && !isPaused) Cyan else Gray
+            )
+        }
+    }
+}
+
+@Composable
+private fun MetricsSummaryRow(currentSteps: Int) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        MetricItem(
+            label = stringResource(R.string.label_distance),
+            value = stringResource(R.string.format_km, StepUtils.calculateDistanceKm(currentSteps))
+        )
+        MetricItem(
+            label = stringResource(R.string.label_calories),
+            value = stringResource(R.string.format_kcal, StepUtils.calculateCalories(currentSteps))
+        )
+    }
+}
+
+@Composable
+fun MetricItem(label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = label, style = MaterialTheme.typography.labelSmall, color = Gray)
+        Text(text = value, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun ControlButtonsRow(
+    isTracking: Boolean,
+    isPaused: Boolean,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onPause: () -> Unit,
+    onResume: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        if (!isTracking) {
+            Button(
+                onClick = onStart,
+                modifier = Modifier.weight(1f).height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = NeonGreen),
+                shape = RoundedCornerShape(28.dp)
+            ) {
+                Text(stringResource(R.string.btn_start), fontWeight = FontWeight.Bold, color = Black)
             }
+        } else {
+            Button(
+                onClick = { if (isPaused) onResume() else onPause() },
+                modifier = Modifier.weight(1f).height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isPaused) Cyan else Gray
+                ),
+                shape = RoundedCornerShape(28.dp)
+            ) {
+                val label = if (isPaused) stringResource(R.string.btn_resume) else stringResource(R.string.btn_pause)
+                Text(label, fontWeight = FontWeight.Bold, color = Black)
+            }
+            
+            Button(
+                onClick = onStop,
+                modifier = Modifier.weight(1f).height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MutedRed),
+                shape = RoundedCornerShape(28.dp)
+            ) {
+                Text(stringResource(R.string.btn_stop), fontWeight = FontWeight.Bold, color = Black)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.HistorySection(
+    sessions: List<TrackingSession>,
+    onLongPress: (TrackingSession) -> Unit
+) {
+    Text(
+        text = stringResource(R.string.label_recent_sessions),
+        style = MaterialTheme.typography.labelLarge,
+        color = Gray,
+        modifier = Modifier.align(Alignment.Start).padding(bottom = 16.dp)
+    )
+
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.weight(1f).fillMaxWidth()
+    ) {
+        items(sessions) { session ->
+            SessionCard(
+                session = session,
+                onLongPress = { onLongPress(session) }
+            )
         }
     }
 }
@@ -210,69 +330,109 @@ fun GoalEditDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.dialog_goal_title)) },
+        title = { Text(stringResource(R.string.dialog_goal_title), color = Color.White) },
+        containerColor = DarkGray,
+        titleContentColor = Color.White,
+        textContentColor = Gray,
         text = {
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                label = { Text(stringResource(R.string.dialog_goal_label)) },
-                singleLine = true
+                label = { Text(stringResource(R.string.dialog_goal_label), color = Gray) },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = NeonGreen,
+                    unfocusedBorderColor = Gray,
+                    focusedLabelColor = NeonGreen,
+                    unfocusedLabelColor = Gray
+                )
             )
         },
         confirmButton = {
             TextButton(onClick = { 
                 text.toIntOrNull()?.let { onConfirm(it) }
             }) {
-                Text(stringResource(R.string.dialog_save))
+                Text(stringResource(R.string.dialog_save), color = NeonGreen, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.dialog_cancel))
+                Text(stringResource(R.string.dialog_cancel), color = Gray)
             }
         }
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SessionCard(session: TrackingSession) {
+fun SessionCard(
+    session: TrackingSession,
+    onLongPress: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = {},
+                onLongClick = onLongPress
+            ),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A)),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                        .format(Date(session.startTime)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White
-                )
-                Text(
-                    text = TimeUtils.formatDuration(session.durationInMillis),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Gray
-                )
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                            .format(Date(session.startTime)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White
+                    )
+                    Text(
+                        text = TimeUtils.formatDuration(session.durationInMillis),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Gray
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = stringResource(R.string.label_steps_count, session.totalSteps),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = NeonGreen,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = stringResource(R.string.label_goal, session.goal),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Gray
+                    )
+                }
             }
-            Column(horizontalAlignment = Alignment.End) {
+            Divider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                thickness = 0.5.dp,
+                color = Color.DarkGray
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
-                    text = stringResource(R.string.label_steps_count, session.totalSteps),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = NeonGreen,
-                    fontWeight = FontWeight.Bold
+                    text = stringResource(R.string.format_km, StepUtils.calculateDistanceKm(session.totalSteps)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Cyan
                 )
                 Text(
-                    text = stringResource(R.string.label_goal, session.goal),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Gray
+                    text = stringResource(R.string.format_kcal, StepUtils.calculateCalories(session.totalSteps)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Cyan
                 )
             }
         }

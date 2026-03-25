@@ -10,4 +10,8 @@ class TrackingRepository(private val sessionDao: SessionDao) {
     suspend fun insert(session: TrackingSession) {
         sessionDao.insertSession(session)
     }
+
+    suspend fun delete(session: TrackingSession) {
+        sessionDao.deleteSession(session)
+    }
 }

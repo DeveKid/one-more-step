@@ -6,12 +6,15 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.onestep.data.model.TrackingSession
 import com.example.onestep.data.repository.TrackingRepository
 import com.example.onestep.service.StepTrackingService
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class TrackerViewModel(
     application: Application,
@@ -59,6 +62,12 @@ class TrackerViewModel(
 
     fun updateDailyGoal(newGoal: Int) {
         _dailyGoal.value = newGoal
+    }
+
+    fun deleteSession(session: TrackingSession) {
+        viewModelScope.launch {
+            repository.delete(session)
+        }
     }
 
     /**
