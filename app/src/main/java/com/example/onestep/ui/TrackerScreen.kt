@@ -66,19 +66,22 @@ fun TrackerScreen(
     if (sessionToDelete != null) {
         AlertDialog(
             onDismissRequest = { sessionToDelete = null },
-            title = { Text("Delete Session") },
-            text = { Text("Are you sure you want to delete this session?") },
+            title = { Text("Delete Session", color = Color.White) },
+            text = { Text("Are you sure you want to delete this session?", color = Gray) },
+            containerColor = DarkGray,
+            titleContentColor = Color.White,
+            textContentColor = Gray,
             confirmButton = {
                 TextButton(onClick = { 
                     sessionToDelete?.let { onDeleteSession(it) }
                     sessionToDelete = null
                 }) {
-                    Text("DELETE", color = MutedRed)
+                    Text("DELETE", color = MutedRed, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { sessionToDelete = null }) {
-                    Text("CANCEL")
+                    Text("CANCEL", color = Cyan)
                 }
             }
         )
@@ -327,26 +330,37 @@ fun GoalEditDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.dialog_goal_title)) },
+        title = { Text(stringResource(R.string.dialog_goal_title), color = Color.White) },
+        containerColor = DarkGray,
+        titleContentColor = Color.White,
+        textContentColor = Gray,
         text = {
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                label = { Text(stringResource(R.string.dialog_goal_label)) },
-                singleLine = true
+                label = { Text(stringResource(R.string.dialog_goal_label), color = Gray) },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = NeonGreen,
+                    unfocusedBorderColor = Gray,
+                    focusedLabelColor = NeonGreen,
+                    unfocusedLabelColor = Gray
+                )
             )
         },
         confirmButton = {
             TextButton(onClick = { 
                 text.toIntOrNull()?.let { onConfirm(it) }
             }) {
-                Text(stringResource(R.string.dialog_save))
+                Text(stringResource(R.string.dialog_save), color = NeonGreen, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.dialog_cancel))
+                Text(stringResource(R.string.dialog_cancel), color = Gray)
             }
         }
     )
